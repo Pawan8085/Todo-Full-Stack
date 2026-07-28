@@ -1,43 +1,58 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
+import { Input, Button } from "antd";
+import { toast } from "react-toastify";
 import { addTodo, fetchTodos } from "../features/todos/todoSlice";
 
-function TodoForm() {
+function TodoForm({ onClose }) {
   const [title, setTitle] = useState("");
+
   const dispatch = useDispatch();
 
   async function handleSubmit(e) {
     e.preventDefault();
 
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      toast.error("Please enter a todo title");
+      return;
+    }
 
     try {
       await dispatch(addTodo({ title })).unwrap();
 
+      toast.success("Todo created successfully");
+
       setTitle("");
 
       dispatch(fetchTodos());
+
+      onClose();
     } catch (error) {
-      console.error(error);
+      toast.error(error || "Failed to create todo");
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mb-6 flex gap-3">
-      <input
-        type="text"
+    <form onSubmit={handleSubmit}>
+      <Input
         placeholder="Enter todo..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="flex-1 rounded border p-2"
+        size="large"
       />
 
-      <button
-        type="submit"
-        className="rounded bg-blue-600 px-4 py-2 text-white"
-      >
-        Add Todo
-      </button>
+      <div className="mt-5 flex justify-end gap-3">
+        <Button onClick={onClose}>
+          Cancel
+        </Button>
+
+        <Button
+          type="primary"
+          htmlType="submit"
+        >
+          Create Todo
+        </Button>
+      </div>
     </form>
   );
 }

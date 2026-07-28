@@ -1,128 +1,96 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
+import { Card, Button, Tag, Popconfirm, Tooltip } from "antd";
 import {
-  editTodo,
-  removeTodo,
-  fetchTodos,
-} from "../features/todos/todoSlice";
+  EditOutlined,
+  DeleteOutlined,
+  CalendarOutlined,
+} from "@ant-design/icons";
+import { toast } from "react-toastify";
+
+import { Typography } from "antd";
+
+const { Title, Text } = Typography;
+
+import { removeTodo, fetchTodos } from "../features/todos/todoSlice";
+
+import EditTodoModal from "./EditTodoModal";
 
 function TodoItem({ todo }) {
   const dispatch = useDispatch();
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(todo.title);
-  const [completed, setCompleted] = useState(todo.completed);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  function openModal() {
+    setIsModalOpen(true);
+  }
+
+  function closeModal() {
+    setIsModalOpen(false);
+  }
 
   async function handleDelete() {
     try {
       await dispatch(removeTodo(todo.id)).unwrap();
-      dispatch(fetchTodos());
-    } catch (error) {
-      console.error(error);
-    }
-  }
 
-  async function handleUpdate() {
-    if (!title.trim()) return;
-
-    try {
-      await dispatch(
-        editTodo({
-          id: todo.id,
-          todo: {
-            title,
-            completed,
-          },
-        })
-      ).unwrap();
+      toast.success("Todo deleted successfully");
 
       dispatch(fetchTodos());
-      setIsEditing(false);
     } catch (error) {
-      console.error(error);
+      toast.error(error || "Failed to delete todo");
     }
-  }
-
-  function handleCancel() {
-    setTitle(todo.title);
-    setCompleted(todo.completed);
-    setIsEditing(false);
   }
 
   return (
-    <li className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      {isEditing ? (
-        <>
-          <div className="flex-1 space-y-3">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-md border p-2 focus:border-blue-500 focus:outline-none"
-            />
+    <>
+      <Card
+        className="mb-4 shadow-sm"
+        bodyStyle={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div>
+          <Title level={5} className="!mb-2">
+            {todo.title}
+          </Title>
 
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={completed}
-                onChange={(e) => setCompleted(e.target.checked)}
-              />
-              Completed
-            </label>
+          <Text type="secondary">
+            <CalendarOutlined className="mr-2" />
+            {new Date(todo.created_at).toLocaleString()}
+          </Text>
+
+          <div className="mt-2">
+            {todo.completed ? (
+              <Tag color="success">Completed</Tag>
+            ) : (
+              <Tag color="warning">Pending</Tag>
+            )}
           </div>
+        </div>
 
-          <div className="ml-4 flex gap-2">
-            <button
-              onClick={handleUpdate}
-              className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-            >
-              Save
-            </button>
+        <div className="flex items-center gap-2">
+          <Tooltip title="Edit Todo">
+            <Button type="text" icon={<EditOutlined />} onClick={openModal} />
+          </Tooltip>
 
-            <button
-              onClick={handleCancel}
-              className="rounded-md bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800">
-              {todo.title}
-            </h3>
+          <Popconfirm
+            title="Delete Todo"
+            description="Are you sure you want to delete this todo?"
+            okText="Yes"
+            cancelText="No"
+            onConfirm={handleDelete}
+          >
+            <Tooltip title="Delete Todo">
+              <Button type="text" danger icon={<DeleteOutlined />} />
+            </Tooltip>
+          </Popconfirm>
+        </div>
+      </Card>
 
-            <p
-              className={`mt-1 text-sm font-medium ${
-                todo.completed
-                  ? "text-green-600"
-                  : "text-yellow-600"
-              }`}
-            >
-              {todo.completed ? "✅ Completed" : "⏳ Pending"}
-            </p>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="rounded-md bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
-            >
-              Edit
-            </button>
-
-            <button
-              onClick={handleDelete}
-              className="rounded-md bg-red-600 px-4 py-2 text-white transition hover:bg-red-700"
-            >
-              Delete
-            </button>
-          </div>
-        </>
-      )}
-    </li>
+      <EditTodoModal open={isModalOpen} todo={todo} onClose={closeModal} />
+    </>
   );
 }
 
