@@ -10,7 +10,9 @@ const authMiddleware = require("./middleware/authMiddleware");
 app.use(express.json());
 
 app.use(
-  cors()
+  cors({
+    origin: process.env.FRONTEND_URL,
+  })
 );
 
 
